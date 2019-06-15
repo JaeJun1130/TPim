@@ -33,13 +33,13 @@ public class MemberViewController implements Initializable {
 	@FXML	private TextField tfID;
 	@FXML	private PasswordField tfPW;
 	@FXML	private TextField tfName;
-	@FXML	private TextField tfMobilePhone;
+	@FXML	private TextField tfContact; //위에 연락처 입력칸
 	
 	@FXML 	private TableView<Member> tableViewMember;
 	@FXML	private TableColumn<Member, String> columnName;
 	@FXML	private TableColumn<Member, String> columnID;
 	@FXML	private TableColumn<Member, String> columnPW;
-	//@FXML	private TableColumn<Member, String> columnMobilePhone;
+	@FXML	private TableColumn<Member, String> columnContact; //아래 연락처 콘솔칸
 	
 	// Member : model이라고도 하고 DTO, VO 라고도 함
 	// 시스템 밖에 저장된 정보를 객체들간에 사용하는 정보로 변환한 자료구조 또는 객체
@@ -62,8 +62,11 @@ public class MemberViewController implements Initializable {
 		columnID.setCellValueFactory(cvf -> cvf.getValue().uidProperty());
 		columnPW.setCellValueFactory(cvf -> cvf.getValue().upwProperty());
 		
-		tableViewMember.getSelectionModel().selectedItemProperty().addListener(
+		columnContact.setCellValueFactory(cvf -> cvf.getValue().contactProperty()); //폰넘버
+		
+		 tableViewMember.getSelectionModel().selectedItemProperty().addListener(
 				(observable, oldValue, newValue) -> showMemberInfo(newValue));
+		 //UI 에서 자료 클릭시 화면에 뛰어주는 역활을함
 
 		btnCreate.setOnMouseClicked(event -> handleCreate());		
 		// btnDelete.setOnMouseClicked(e -> handleDelete());		
@@ -112,23 +115,32 @@ public class MemberViewController implements Initializable {
 	private void handleCreate() { // event source, listener, handler
 		if(tfID.getText().length() > 0) {
 			Member newMember = 
-					new Member(tfID.getText(), tfPW.getText(), tfName.getText(), "");
+					new Member(tfID.getText(), tfPW.getText(), tfName.getText(), tfContact.getText());
+			if(memberService.findByUid(newMember)<0) {
 			data.add(newMember);			
 			tableViewMember.setItems(data);
 			memberService.create(newMember);
-		} else
+		} 
+			else {
+			showAlert("아이디를 중복으로 등록할수 없습니다.");
+		    }	
+		}   else 
 			showAlert("ID 입력오류");
 	}
 	@FXML 
 	private void handleUpdate() {
-		Member newMember = new Member(tfID.getText(), tfPW.getText(), tfName.getText(), tfMobilePhone.getText());
+		Member newMember = new Member(tfID.getText(), tfPW.getText(), tfName.getText(),tfContact.getText());
 
 		int selectedIndex = tableViewMember.getSelectionModel().getSelectedIndex();
-		if (selectedIndex >= 0) {
+		// uid가 수정이 되면 수정하지 못하게 막는다. findbyuid 가 -1를 반환함
+		if (selectedIndex != memberService.findByUid(newMember)) {
+			showAlert("아이디를 수정할수 없습니다.");
+		}
+		else if (selectedIndex >= 0) {
 			tableViewMember.getItems().set(selectedIndex, newMember);
 			memberService.update(newMember);			
 		} else {
-			showAlert("������ �� �� �����ϴ�.");          
+			showAlert("수정할수 있는 목록이 없습니다.");          
         }
 	}
 	
@@ -138,7 +150,7 @@ public class MemberViewController implements Initializable {
 		if (selectedIndex >= 0) {
 			memberService.delete(tableViewMember.getItems().remove(selectedIndex));			
 		} else {
-			showAlert("������ �� �� �����ϴ�.");
+			showAlert("삭제할수 있는 목록이 없습니다.");
         }
 	}
 	
